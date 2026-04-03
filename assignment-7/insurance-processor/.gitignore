@@ -1,0 +1,20 @@
+.venv
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Microsoft Office / Word
+*.doc
+*.docx
+~$*
+
+# Presentations / lecture slides
+*.ppt
+*.pptx
+*.odp
+*.key
+
+# PDFs
+*.pdf

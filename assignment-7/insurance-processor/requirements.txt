@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+jinja2
+python-multipart
+httpx
+python-dotenv
+pillow
+pymupdf
+azure-ai-vision-imageanalysis
+azure-core
+

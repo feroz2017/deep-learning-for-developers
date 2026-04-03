@@ -1,0 +1,20 @@
+torch==2.10.0
+torchvision==0.25.0
+torchaudio==2.10.0
+
+# --- Core scientific stack ---
+numpy==1.26.4
+pandas==2.2.2
+matplotlib==3.8.4
+seaborn==0.13.2
+scikit-learn==1.4.2
+
+# --- Needed for torchvision datasets / image utilities ---
+pillow==10.4.0
+
+# --- TensorBoard logging (used in task2-3.ipynb) ---
+tensorboard==2.20.0
+
+# --- Jupyter kernel (so this env can appear in Jupyter/VS Code) ---
+ipykernel==6.29.5
+

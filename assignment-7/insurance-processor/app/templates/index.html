@@ -1,0 +1,693 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AI Insurance Claims Processor</title>
+    <style>
+      :root {
+        --bg: #f8fafc;
+        --card: #ffffff;
+        --border: #e2e8f0;
+        --text: #1e293b;
+        --muted: #64748b;
+        --accent: #3b82f6;
+        --green: #16a34a;
+        --amber: #d97706;
+        --red: #dc2626;
+        --pill: #f1f5f9;
+        --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.6;
+      }
+      .container { max-width: 1260px; margin: 0 auto; padding: 24px 20px; }
+
+      header { margin-bottom: 24px; }
+      header h1 { font-size: 1.5rem; display: flex; align-items: center; gap: 8px; }
+      .subtitle { color: var(--muted); font-size: 0.88rem; margin-top: 2px; }
+
+      .svc-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+      .svc-badge { padding: 2px 10px; border-radius: 6px; font-size: 0.72rem; font-weight: 600; }
+      .svc-google { background: #dcfce7; color: #166534; }
+      .svc-azure { background: #dbeafe; color: #1e40af; }
+
+      .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 18px; margin-bottom: 14px; box-shadow: var(--shadow); }
+      .card-title { font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin-bottom: 10px; font-weight: 700; }
+
+      .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+      .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+      @media (max-width: 768px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+      label { font-weight: 600; display: block; margin-bottom: 4px; font-size: 0.82rem; }
+      textarea {
+        width: 100%; min-height: 90px; padding: 10px; border-radius: 8px;
+        border: 1px solid var(--border); font-family: inherit; font-size: 0.88rem;
+        resize: vertical; transition: border-color 0.15s;
+      }
+      textarea:focus { border-color: var(--accent); outline: none; }
+      input[type="file"] { font-size: 0.82rem; }
+      .field { margin-top: 12px; }
+
+      .btn {
+        background: var(--accent); color: #fff; border: 0; padding: 10px 22px;
+        border-radius: 8px; cursor: pointer; font-size: 0.88rem; font-weight: 600;
+        transition: background 0.15s;
+      }
+      .btn:hover { background: #2563eb; }
+      .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+      .status-bar {
+        display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 8px;
+        font-size: 0.82rem; background: var(--pill); margin-top: 14px; margin-bottom: 14px;
+      }
+      .spinner { width: 14px; height: 14px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.5s linear infinite; display: none; }
+      .spinner.active { display: inline-block; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+
+      .risk-badge {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 6px 18px; border-radius: 999px; font-weight: 700; font-size: 1.05rem;
+      }
+      .risk-LOW { background: #dcfce7; color: var(--green); }
+      .risk-MEDIUM { background: #fef3c7; color: var(--amber); }
+      .risk-HIGH { background: #fee2e2; color: var(--red); }
+
+      .tag { display: inline-block; padding: 2px 8px; margin: 2px; border-radius: 999px; font-size: 0.74rem; background: var(--pill); }
+      .tag-pii { background: #fee2e2; color: var(--red); }
+      .tag-entity { background: #dbeafe; color: #1e40af; }
+      .tag-kp { background: #f0fdf4; color: var(--green); }
+      .tag-obj { background: #fef3c7; color: #92400e; }
+
+      .summary-box { background: linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%); border: 1px solid #bfdbfe; border-radius: 10px; padding: 16px; font-size: 0.88rem; line-height: 1.7; }
+      .summary-stats { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 10px; }
+      .stat { display: flex; flex-direction: column; align-items: center; background: var(--card); padding: 6px 14px; border-radius: 8px; min-width: 80px; }
+      .stat-val { font-size: 1.2rem; font-weight: 700; color: var(--accent); }
+      .stat-label { font-size: 0.68rem; color: var(--muted); text-transform: uppercase; }
+
+      .caption-text { font-style: italic; color: var(--text); margin-bottom: 4px; font-size: 0.88rem; }
+      .sent-bar-wrap { margin-top: 6px; }
+      .sent-bar { height: 8px; border-radius: 4px; background: #e2e8f0; overflow: hidden; }
+      .sent-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
+
+      .flag-item { display: flex; align-items: flex-start; gap: 6px; margin-bottom: 4px; font-size: 0.82rem; }
+      .ocr-preview {
+        background: var(--pill); padding: 12px; border-radius: 8px; font-size: 0.78rem;
+        max-height: 180px; overflow-y: auto; white-space: pre-wrap; word-break: break-word;
+        font-family: ui-monospace, "SF Mono", monospace;
+      }
+
+      table.ent-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+      table.ent-table th { text-align: left; padding: 3px 6px; border-bottom: 2px solid var(--border); color: var(--muted); font-size: 0.72rem; text-transform: uppercase; }
+      table.ent-table td { padding: 3px 6px; border-bottom: 1px solid var(--border); }
+
+      .per-img { border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 10px; background: #fafbfc; }
+      .per-img-title { font-weight: 600; font-size: 0.82rem; margin-bottom: 6px; }
+
+      .meta-bar {
+        display: flex; flex-wrap: wrap; gap: 16px; font-size: 0.78rem; color: var(--muted);
+        padding: 10px 14px; border-radius: 8px; background: var(--pill); margin-top: 12px;
+      }
+      .meta-bar strong { color: var(--text); }
+
+      details { margin-top: 12px; }
+      details summary { cursor: pointer; font-size: 0.82rem; color: var(--muted); }
+      details pre {
+        background: var(--pill); padding: 12px; border-radius: 8px; font-size: 0.72rem;
+        overflow: auto; max-height: 400px; margin-top: 8px;
+      }
+
+      .hidden { display: none; }
+
+      .pii-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; margin-top: 6px; }
+      .pii-table th { text-align: left; padding: 3px 6px; border-bottom: 2px solid var(--border); color: var(--muted); font-size: 0.72rem; text-transform: uppercase; }
+      .pii-table td { padding: 3px 6px; border-bottom: 1px solid var(--border); }
+      /* ── LLM written report ─────────────────────────── */
+      .llm-report {
+        background: #fafcff;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 20px 22px;
+        font-size: 0.87rem;
+        line-height: 1.75;
+        color: var(--text);
+      }
+      .llm-report h1,.llm-report h2 {
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 4px;
+        margin: 16px 0 8px;
+        font-size: 1rem;
+        color: var(--text);
+      }
+      .llm-report h3 {
+        margin: 14px 0 6px;
+        font-size: 0.9rem;
+        color: var(--text);
+      }
+      .llm-report p  { margin: 6px 0; }
+      .llm-report ul,.llm-report ol { margin: 6px 0 6px 20px; }
+      .llm-report li { margin-bottom: 3px; }
+      .llm-report strong { color: var(--text); }
+      .llm-report em { color: var(--muted); }
+      .llm-report code {
+        background: var(--pill); padding: 1px 5px; border-radius: 4px;
+        font-family: ui-monospace,"SF Mono",monospace; font-size: 0.82em;
+      }
+      .llm-report blockquote {
+        border-left: 3px solid var(--accent); margin: 8px 0;
+        padding: 4px 12px; background: #eff6ff; border-radius: 0 6px 6px 0;
+      }
+      .llm-report table {
+        width: 100%; border-collapse: collapse; font-size: 0.82rem; margin: 10px 0;
+      }
+      .llm-report th {
+        text-align: left; padding: 4px 8px;
+        border-bottom: 2px solid var(--border); background: var(--pill);
+      }
+      .llm-report td { padding: 4px 8px; border-bottom: 1px solid var(--border); }
+      .llm-meta {
+        display: flex; flex-wrap: wrap; gap: 10px;
+        font-size: 0.74rem; color: var(--muted); margin-bottom: 10px;
+      }
+      .llm-meta .svc-badge { font-size: 0.72rem; }
+      .llm-disabled {
+        text-align: center; padding: 32px 16px; color: var(--muted);
+        background: var(--pill); border-radius: 8px; font-size: 0.85rem;
+      }
+      .llm-disabled code {
+        display: inline-block; background: var(--border); padding: 2px 8px;
+        border-radius: 4px; font-family: ui-monospace, monospace;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>AI Insurance Claims Processor</h1>
+        <p class="subtitle">Automated multi-provider cognitive analysis for insurance claims — upload damage photos, documents, and a description.</p>
+        <div class="svc-row">
+          <span class="svc-badge svc-google">Google Vision API</span>
+          <span class="svc-badge svc-google">Google Natural Language</span>
+          <span class="svc-badge svc-google">Google Translation</span>
+          <span class="svc-badge svc-azure">Azure Computer Vision</span>
+          <span class="svc-badge svc-azure">Azure Language Service</span>
+          <span class="svc-badge" style="background:#e8f0fe;color:#1a73e8">Google Gemini LLM</span>
+        </div>
+      </header>
+
+      <div class="card">
+        <div class="grid-2">
+          <div>
+            <div class="field">
+              <label for="images">Damage Photos (images)</label>
+              <input id="images" type="file" accept="image/*" multiple />
+            </div>
+            <div class="field">
+              <label for="documents">Supporting Documents (PDF / scanned)</label>
+              <input id="documents" type="file" accept="application/pdf,image/*" multiple />
+            </div>
+          </div>
+          <div>
+            <div class="field">
+              <label for="description">Claim Description (any language)</label>
+              <textarea id="description" placeholder="My Toyota sedan was rear-ended near the roundabout on October 26th. The front bumper is cracked..."></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="field">
+          <button class="btn" id="analyzeBtn">Analyze Claim</button>
+        </div>
+      </div>
+
+      <div class="status-bar">
+        <div class="spinner" id="spinner"></div>
+        <span id="statusText">Ready — upload files and click Analyze.</span>
+      </div>
+
+      <div id="resultArea" class="hidden">
+
+        <!-- SUMMARY -->
+        <div class="summary-box" id="summaryBox"></div>
+
+        <!-- LLM WRITTEN REPORT -->
+        <div class="card" style="margin-top:14px">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+            <div class="card-title" style="margin-bottom:0">Generated Written Report</div>
+            <span id="llmProviderBadge" style="font-size:0.74rem;color:var(--muted)"></span>
+          </div>
+          <div id="llmReportArea"></div>
+        </div>
+
+        <!-- RISK -->
+        <div class="card" style="margin-top:14px">
+          <div class="card-title">Risk Assessment</div>
+          <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+            <span class="risk-badge" id="riskBadge"></span>
+            <span id="riskScore" style="font-size:0.88rem;color:var(--muted)"></span>
+          </div>
+          <div id="riskBreakdown" style="margin-top:10px"></div>
+          <div id="riskFlags" style="margin-top:8px"></div>
+        </div>
+
+        <!-- PER-IMAGE -->
+        <div class="card" id="perImageCard">
+          <div class="card-title">Per-Image Analysis</div>
+          <div id="perImageArea"></div>
+        </div>
+
+        <!-- VISION + DOCUMENT -->
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title">Aggregated Vision Results</div>
+            <div class="field">
+              <label>AI-Generated Captions (Azure)</label>
+              <div id="captionsArea"></div>
+            </div>
+            <div class="field">
+              <label>Detected Labels (Google)</label>
+              <div id="labelsArea"></div>
+            </div>
+            <div class="field">
+              <label>Detected Objects (Google)</label>
+              <div id="objectsArea"></div>
+            </div>
+            <div class="field">
+              <label>Azure Tags</label>
+              <div id="azureTagsArea"></div>
+            </div>
+            <div class="field">
+              <label>Safe Search</label>
+              <div id="safeSearchArea"></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Document OCR (Google Vision)</div>
+            <div id="ocrLengthInfo" style="font-size:0.82rem;color:var(--muted);margin-bottom:8px"></div>
+            <div id="ocrPreview" class="ocr-preview"></div>
+          </div>
+        </div>
+
+        <!-- TRANSLATION + SENTIMENT -->
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title">Translation (Google Translate)</div>
+            <div id="translationArea"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Sentiment Analysis (Google NLP)</div>
+            <div id="sentimentArea"></div>
+          </div>
+        </div>
+
+        <!-- NLP + AZURE LANGUAGE -->
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title">Entity Recognition (Google NLP)</div>
+            <div id="entitiesArea" style="max-height:300px;overflow-y:auto"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Key Phrases & PII (Azure Language)</div>
+            <div class="field">
+              <label>Key Phrases</label>
+              <div id="keyPhrasesArea"></div>
+            </div>
+            <div class="field">
+              <label>PII Entities Detected</label>
+              <div id="piiArea"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- META -->
+        <div class="meta-bar" id="metaBar"></div>
+
+        <details>
+          <summary>Show full JSON response</summary>
+          <pre id="rawPre"></pre>
+        </details>
+      </div>
+    </div>
+
+    <script>
+      const $ = id => document.getElementById(id);
+
+      function sentColor(s) { return s <= -0.2 ? 'var(--red)' : s <= 0.05 ? 'var(--amber)' : 'var(--green)'; }
+      function esc(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+
+      function tags(arr, cls) { return (arr||[]).map(t => `<span class="tag ${cls||''}">${esc(t)}</span>`).join(''); }
+
+      function renderCaptions(caps) {
+        if (!caps?.length) return '<span style="color:var(--muted)">No images analyzed</span>';
+        return caps.map((c,i) => c.error
+          ? `<div style="color:var(--red);font-size:0.82rem">Image ${i+1}: ${esc(c.error)}</div>`
+          : `<div class="caption-text">"${esc(c.caption||'N/A')}"</div>`
+        ).join('');
+      }
+
+      function renderFlags(flags) {
+        return (flags||[]).map(f => `<div class="flag-item"><span>&#9888;</span><span>${esc(f)}</span></div>`).join('');
+      }
+
+      function renderBreakdown(bd) {
+        if (!bd || !Object.keys(bd).length) return '';
+        return '<div style="display:flex;flex-wrap:wrap;gap:6px">' +
+          Object.entries(bd).map(([k,v]) =>
+            `<span class="tag" style="font-size:0.72rem">${k.replace(/_/g,' ')}: +${v}</span>`
+          ).join('') + '</div>';
+      }
+
+      function renderEntities(ents) {
+        if (!ents?.length) return '<span style="color:var(--muted)">None</span>';
+        const top = ents.slice(0, 20);
+        let h = '<table class="ent-table"><thead><tr><th>Entity</th><th>Type</th><th>Salience</th></tr></thead><tbody>';
+        top.forEach(e => {
+          h += `<tr><td>${esc(e.name)}</td><td><span class="tag tag-entity">${esc(e.type)}</span></td><td>${(e.salience*100).toFixed(1)}%</td></tr>`;
+        });
+        h += '</tbody></table>';
+        if (ents.length > 20) h += `<div style="color:var(--muted);font-size:0.78rem;margin-top:4px">+ ${ents.length - 20} more</div>`;
+        return h;
+      }
+
+      function renderPii(pii) {
+        if (!pii?.length) return '<span style="color:var(--muted)">No PII detected</span>';
+        let h = '<table class="pii-table"><thead><tr><th>Category</th><th>Text</th><th>Confidence</th></tr></thead><tbody>';
+        pii.slice(0, 25).forEach(p => {
+          h += `<tr><td><span class="tag tag-pii">${esc(p.category)}</span></td><td>${esc(p.text)}</td><td>${((p.confidenceScore||0)*100).toFixed(0)}%</td></tr>`;
+        });
+        h += '</tbody></table>';
+        if (pii.length > 25) h += `<div style="color:var(--muted);font-size:0.78rem;margin-top:4px">+ ${pii.length - 25} more</div>`;
+        return h;
+      }
+
+      function renderSafe(ss) {
+        if (!ss) return '';
+        return Object.entries(ss).map(([k,v]) => {
+          const cls = ['LIKELY','VERY_LIKELY'].includes(v) ? 'tag-pii' : '';
+          return `<span class="tag ${cls}">${esc(k)}: ${esc(v)}</span>`;
+        }).join('');
+      }
+
+      function renderObjects(objs) {
+        if (!objs?.length) return '<span style="color:var(--muted)">None</span>';
+        const names = [...new Set(objs.map(o => o.name).filter(Boolean))];
+        return names.map(n => `<span class="tag tag-obj">${esc(n)}</span>`).join('');
+      }
+
+      function renderPerImage(images) {
+        if (!images?.length) return '<span style="color:var(--muted)">No images</span>';
+        return images.map((img, i) => {
+          let h = `<div class="per-img"><div class="per-img-title">Image ${i+1}: ${esc(img.filename||'unnamed')}</div>`;
+          if (img.azure_caption) h += `<div class="caption-text">"${esc(img.azure_caption)}"</div>`;
+          if (img.azure_error) h += `<div style="color:var(--red);font-size:0.82rem">Azure error: ${esc(img.azure_error)}</div>`;
+          h += '<div style="margin-top:4px">';
+          if (img.google_labels?.length) h += `<div style="margin-bottom:4px"><strong style="font-size:0.72rem;color:var(--muted)">LABELS</strong> ${tags(img.google_labels.slice(0,10))}</div>`;
+          if (img.google_objects?.length) {
+            const names = [...new Set(img.google_objects.map(o=>o.name).filter(Boolean))];
+            h += `<div style="margin-bottom:4px"><strong style="font-size:0.72rem;color:var(--muted)">OBJECTS</strong> ${tags(names, 'tag-obj')}</div>`;
+          }
+          if (img.azure_tags?.length) h += `<div style="margin-bottom:4px"><strong style="font-size:0.72rem;color:var(--muted)">AZURE TAGS</strong> ${tags(img.azure_tags.slice(0,10))}</div>`;
+          if (img.google_safe_search) h += `<div><strong style="font-size:0.72rem;color:var(--muted)">SAFE SEARCH</strong> ${renderSafe(img.google_safe_search)}</div>`;
+          if (img.ocr_snippet) h += `<div style="margin-top:4px"><strong style="font-size:0.72rem;color:var(--muted)">OCR SNIPPET</strong><div class="ocr-preview" style="max-height:80px;margin-top:2px">${esc(img.ocr_snippet)}</div></div>`;
+          h += '</div></div>';
+          return h;
+        }).join('');
+      }
+
+      function renderMeta(meta) {
+        if (!meta) return '';
+        const parts = [];
+        parts.push(`<strong>Total:</strong> ${meta.total_duration_ms}ms`);
+        parts.push(`<strong>Images:</strong> ${meta.images_processed}`);
+        parts.push(`<strong>Documents:</strong> ${meta.documents_processed}`);
+
+        const svcList = meta.services_called || [];
+        const grouped = {};
+        svcList.forEach(s => {
+          if (!grouped[s.name]) grouped[s.name] = { count: 0, total_ms: 0, provider: s.provider };
+          grouped[s.name].count++;
+          grouped[s.name].total_ms += s.duration_ms;
+        });
+        const svcHtml = Object.entries(grouped).map(([name, info]) => {
+          const cls = info.provider === 'google' ? 'svc-google' : 'svc-azure';
+          return `<span class="svc-badge ${cls}">${name} × ${info.count} (${info.total_ms}ms)</span>`;
+        }).join(' ');
+
+        return parts.join(' &nbsp;|&nbsp; ') + '<div style="margin-top:6px">' + svcHtml + '</div>';
+      }
+
+      function renderSummary(s, risk) {
+        if (!s) return '';
+        let h = `<div style="margin-bottom:10px">${esc(s.text)}</div>`;
+        h += '<div class="summary-stats">';
+        h += `<div class="stat"><div class="stat-val">${s.image_count}</div><div class="stat-label">Images</div></div>`;
+        h += `<div class="stat"><div class="stat-val">${s.ocr_chars}</div><div class="stat-label">OCR chars</div></div>`;
+        h += `<div class="stat"><div class="stat-val">${s.entity_count}</div><div class="stat-label">Entities</div></div>`;
+        h += `<div class="stat"><div class="stat-val">${s.pii_count}</div><div class="stat-label">PII</div></div>`;
+        h += `<div class="stat"><div class="stat-val">${s.keyphrase_count}</div><div class="stat-label">Key Phrases</div></div>`;
+        h += '</div>';
+        return h;
+      }
+
+      /* ── Minimal safe markdown → HTML renderer ─────────────────────────── */
+      function mdToHtml(md) {
+        if (!md) return '';
+        const lines = md.split('\n');
+        let html = '';
+        let inUl = false, inOl = false;
+
+        const closeList = () => {
+          if (inUl) { html += '</ul>'; inUl = false; }
+          if (inOl) { html += '</ol>'; inOl = false; }
+        };
+
+        const inline = t =>
+          t
+            .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+            .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+            .replace(/__(.+?)__/g,'<strong>$1</strong>')
+            .replace(/\*(.+?)\*/g,'<em>$1</em>')
+            .replace(/_(.+?)_/g,'<em>$1</em>')
+            .replace(/`([^`]+)`/g,'<code>$1</code>')
+            .replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2" target="_blank">$1</a>');
+
+        for (const raw of lines) {
+          const line = raw.trimEnd();
+
+          // headings
+          if (/^### /.test(line)) { closeList(); html += `<h3>${inline(line.slice(4))}</h3>`; continue; }
+          if (/^## /.test(line))  { closeList(); html += `<h2>${inline(line.slice(3))}</h2>`; continue; }
+          if (/^# /.test(line))   { closeList(); html += `<h1>${inline(line.slice(2))}</h1>`; continue; }
+
+          // blockquote
+          if (/^> /.test(line)) { closeList(); html += `<blockquote>${inline(line.slice(2))}</blockquote>`; continue; }
+
+          // horizontal rule
+          if (/^---+$/.test(line.trim())) { closeList(); html += '<hr>'; continue; }
+
+          // unordered list
+          if (/^[-*] /.test(line)) {
+            if (inOl) { html += '</ol>'; inOl = false; }
+            if (!inUl) { html += '<ul>'; inUl = true; }
+            html += `<li>${inline(line.slice(2))}</li>`;
+            continue;
+          }
+
+          // ordered list
+          if (/^\d+\. /.test(line)) {
+            if (inUl) { html += '</ul>'; inUl = false; }
+            if (!inOl) { html += '<ol>'; inOl = true; }
+            html += `<li>${inline(line.replace(/^\d+\. /,''))}</li>`;
+            continue;
+          }
+
+          // table row
+          if (/^\|/.test(line)) {
+            const cells = line.split('|').slice(1,-1);
+            if (cells.every(c => /^[-: ]+$/.test(c))) { html += '<tr>'; continue; }
+            const tag = cells.length && html.includes('<thead>') ? 'td' : 'th';
+            if (!html.endsWith('</thead>') && !html.endsWith('</tbody>') && !html.includes('<table>')) {
+              html += '<table><thead>';
+            }
+            html += `<tr>${cells.map(c=>`<${tag}>${inline(c.trim())}</${tag}>`).join('')}</tr>`;
+            continue;
+          }
+
+          closeList();
+          if (line.trim() === '') { html += '<br>'; continue; }
+          html += `<p>${inline(line)}</p>`;
+        }
+        closeList();
+        return html;
+      }
+
+      function renderLlmReport(wr) {
+        if (!wr) {
+          $('llmProviderBadge').textContent = '';
+          return '<div class="llm-disabled">No report data received.</div>';
+        }
+
+        // provider badge
+        const providerLabel = {google:'Google Gemini'}[wr.provider] || (wr.provider || 'LLM');
+        const providerCls   = wr.provider === 'google'
+          ? 'style="background:#e8f0fe;color:#1a73e8"'
+          : '';
+        const modelLabel = wr.model ? esc(wr.model) : '';
+
+        $('llmProviderBadge').innerHTML =
+          `<span class="svc-badge" ${providerCls}>${esc(providerLabel)}</span>` +
+          (modelLabel ? `<span style="margin-left:6px;font-size:0.72rem;color:var(--muted)">${modelLabel}</span>` : '');
+
+        if (wr.status === 'disabled') {
+          return `<div class="llm-disabled">
+            <div style="font-size:1.5rem;margin-bottom:8px">📋</div>
+            <strong>LLM Written Report not configured</strong><br><br>
+            Add the following to your <code>.env</code> and restart the server:<br><br>
+            <code>GOOGLE_GEMINI_API_KEY=your_gemini_key</code><br>
+            <code>GOOGLE_GEMINI_MODEL=gemini-2.0-flash</code><br><br>
+            Get your key at:
+            <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com/app/apikey</a>
+          </div>`;
+        }
+
+        if (wr.status === 'error') {
+          const isAuth = (wr.error || '').includes('401') || (wr.error || '').includes('403') || (wr.error || '').includes('API_KEY');
+          return `<div class="llm-report" style="background:#fff5f5;border-color:#fecaca">
+            <strong style="color:var(--red)">⚠ LLM Report Error (${esc(wr.provider||'?')})</strong><br>
+            <span style="color:var(--red)">${esc(wr.error || 'Unknown error')}</span>
+            ${isAuth ? `<br><br>
+              <strong>Fix:</strong> Your Gemini API key may be invalid.<br>
+              Check <code>GOOGLE_GEMINI_API_KEY</code> in <code>.env</code>.<br>
+              Get a new key at:
+              <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com/app/apikey</a>
+            ` : ''}
+          </div>`;
+        }
+
+        if (wr.status === 'ok' && wr.report_markdown) {
+          return `<div class="llm-report">${mdToHtml(wr.report_markdown)}</div>`;
+        }
+
+        return '<div class="llm-disabled">No report content returned by the model.</div>';
+      }
+
+      $('analyzeBtn').addEventListener('click', async () => {
+        $('resultArea').classList.add('hidden');
+        $('spinner').classList.add('active');
+        $('statusText').textContent = 'Uploading and analyzing with cognitive services...';
+        $('analyzeBtn').disabled = true;
+
+        const fd = new FormData();
+        for (const f of $('images').files) fd.append('images', f);
+        for (const f of $('documents').files) fd.append('documents', f);
+        fd.append('description', $('description').value || '');
+
+        try {
+          const resp = await fetch('/api/analyze', { method: 'POST', body: fd });
+          const data = await resp.json();
+          if (!resp.ok) {
+            // Server returned a structured error (500 with JSON body)
+            const detail = data?.detail || data?.error || 'Request failed';
+            const svcErrs = data?.service_errors || [];
+            throw new Error(
+              detail + (svcErrs.length ? '\n\nService errors:\n' + svcErrs.map(e => `• ${e.service}: ${e.error}`).join('\n') : '')
+            );
+          }
+
+          // Service errors banner
+          const svcErrs = data.meta?.service_errors || [];
+          if (svcErrs.length) {
+            $('summaryBox').innerHTML =
+              `<div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:12px;margin-bottom:10px;font-size:0.82rem">
+                <strong>⚠ ${svcErrs.length} service(s) had errors — partial results shown:</strong>
+                <ul style="margin:4px 0 0 16px">${svcErrs.map(e=>`<li><strong>${esc(e.service)}</strong>: ${esc(e.error)}</li>`).join('')}</ul>
+              </div>` + renderSummary(data.summary, data.risk);
+          } else {
+            // Summary
+            $('summaryBox').innerHTML = renderSummary(data.summary, data.risk);
+          }
+          $('llmReportArea').innerHTML = renderLlmReport(data.written_report);
+
+          // Risk
+          const r = data.risk || {};
+          $('riskBadge').className = `risk-badge risk-${r.level||'LOW'}`;
+          $('riskBadge').textContent = r.level || '-';
+          $('riskScore').textContent = `Score: ${r.score ?? '-'} / 100`;
+          $('riskBreakdown').innerHTML = renderBreakdown(r.breakdown);
+          $('riskFlags').innerHTML = renderFlags(r.flags);
+
+          // Per-image
+          const perImg = data.damage?.per_image || [];
+          if (perImg.length) {
+            $('perImageCard').classList.remove('hidden');
+            $('perImageArea').innerHTML = renderPerImage(perImg);
+          } else {
+            $('perImageCard').classList.add('hidden');
+          }
+
+          // Captions, labels, objects
+          $('captionsArea').innerHTML = renderCaptions(data.damage?.azure_captions);
+          $('labelsArea').innerHTML = tags(data.damage?.google_labels);
+          $('objectsArea').innerHTML = renderObjects(data.damage?.google_objects);
+          $('azureTagsArea').innerHTML = tags(data.damage?.azure_tags);
+          $('safeSearchArea').innerHTML = renderSafe(data.damage?.google_safe_search);
+
+          // OCR
+          const doc = data.document || {};
+          $('ocrLengthInfo').textContent = doc.ocr_text_length ? `${doc.ocr_text_length} characters extracted` : 'No documents processed';
+          $('ocrPreview').textContent = doc.ocr_text_preview || '(no text)';
+
+          // Translation
+          const tr = data.translation || {};
+          if (tr.source_language && tr.source_language !== 'en') {
+            $('translationArea').innerHTML =
+              `<div style="margin-bottom:6px"><span class="tag">Detected: <strong>${esc(tr.source_language)}</strong></span></div>` +
+              `<div style="font-size:0.85rem;background:var(--pill);padding:10px;border-radius:8px">${esc(tr.translated_description)}</div>`;
+          } else {
+            $('translationArea').innerHTML = '<span class="tag">English detected — no translation needed</span>';
+          }
+
+          // Sentiment
+          const sent = data.text_analysis?.sentiment || {};
+          const sScore = sent.score ?? 0;
+          const pct = ((sScore + 1) / 2) * 100;
+          const tone = sScore <= -0.2 ? 'Negative' : (sScore <= 0.2 ? 'Neutral' : 'Positive');
+          $('sentimentArea').innerHTML = `
+            <div style="font-size:0.9rem;font-weight:600;margin-bottom:6px">${tone}</div>
+            <div style="display:flex;justify-content:space-between;font-size:0.72rem;color:var(--muted)">
+              <span>-1.0</span><span>0</span><span>+1.0</span>
+            </div>
+            <div class="sent-bar"><div class="sent-fill" style="width:${pct}%;background:${sentColor(sScore)}"></div></div>
+            <div style="margin-top:6px;font-size:0.82rem">Score: <strong>${sScore}</strong> &nbsp; Magnitude: <strong>${sent.magnitude ?? '-'}</strong></div>
+          `;
+
+          // Entities
+          $('entitiesArea').innerHTML = renderEntities(data.text_analysis?.entities);
+
+          // Key phrases + PII
+          $('keyPhrasesArea').innerHTML = tags(data.text_analysis?.key_phrases, 'tag-kp');
+          $('piiArea').innerHTML = renderPii(data.text_analysis?.pii_entities);
+
+          // Meta
+          $('metaBar').innerHTML = renderMeta(data.meta);
+
+          // Raw JSON
+          $('rawPre').textContent = JSON.stringify(data, null, 2);
+
+          $('spinner').classList.remove('active');
+          $('statusText').textContent = `Analysis complete in ${data.meta?.total_duration_ms || '?'}ms`;
+          $('resultArea').classList.remove('hidden');
+        } catch (err) {
+          $('spinner').classList.remove('active');
+          $('statusText').textContent = 'Error: ' + err.message;
+        } finally {
+          $('analyzeBtn').disabled = false;
+        }
+      });
+    </script>
+  </body>
+</html>

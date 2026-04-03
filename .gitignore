@@ -1,0 +1,23 @@
+.venv
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Microsoft Office / Word
+*.doc
+*.docx
+~$*
+
+# Presentations / lecture slides
+*.ppt
+*.pptx
+*.odp
+*.key
+
+# PDFs
+*.pdf
+
+# Dataset archives (GitHub hard limit 100 MB per file; extract locally or re-download)
+**/data/**/*.tar.gz
