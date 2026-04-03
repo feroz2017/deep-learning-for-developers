@@ -21,3 +21,10 @@
 
 # Dataset archives (GitHub hard limit 100 MB per file; extract locally or re-download)
 **/data/**/*.tar.gz
+
+# Local datasets & downloaded training data (re-download or document source in README)
+assignment-*/data/
+assignment-4/*-dataset/
+assignment-5/images/
+assignment-7/sample-data/
+demo-3/dataset/
