@@ -1,0 +1,83 @@
+scout_task:
+  description: >
+    Use the AI News Fetcher and GitHub Trending AI Repos tools to collect
+    today's top AI developments. Filter out reposts and non-technical content.
+    Return the top 8 items clearly formatted with title, source, a one-sentence
+    summary of what it is, and the URL.
+  expected_output: >
+    A numbered list of 8 AI news items. Each item has:
+    - TITLE: the item title
+    - SOURCE: where it came from
+    - SUMMARY: one sentence describing what it is
+    - URL: the link
+  agent: scout
+
+analyst_task:
+  description: >
+    Take the Scout's list of 8 items. For each one, write a short technical
+    analysis answering: What is it exactly? What problem does it solve?
+    Why should a developer care about it today? Keep each analysis to
+    2-3 sentences. Be specific — avoid vague phrases like 'interesting' or
+    'exciting'. Add the analysis as a new ANALYSIS field for each item.
+  expected_output: >
+    The same 8 items from the Scout, each now including an ANALYSIS field
+    with a 2-3 sentence technical explanation written for developers.
+  agent: analyst
+  context:
+    - scout_task
+
+categorizer_task:
+  description: >
+    Take the 8 analysed items and group them under the most appropriate
+    category heading. Valid categories are:
+    ## LLMs and Prompting
+    ## Computer Vision
+    ## AI Tools and Frameworks
+    ## Research Breakthroughs
+    ## Open Source Releases
+    ## Practical Tutorials
+    Each item belongs to exactly one category. Only include categories
+    that have at least one item.
+  expected_output: >
+    All 8 items grouped under their category headings in Markdown format.
+    Each item shows its TITLE, ANALYSIS, and URL.
+  agent: categorizer
+  context:
+    - analyst_task
+
+writer_task:
+  description: >
+    Using the categorized content, write the full newsletter body.
+    For each category that has items:
+    - Use ## Category Name as the heading
+    - For each item write:
+        **Punchy developer-friendly headline rewrite**
+        3 to 4 sentences: what it is, why it matters, what to do with it.
+        Source: URL
+    Write in direct developer voice. Use prose, not bullet points.
+    No marketing language. Assume the reader is a smart, busy engineer.
+  expected_output: >
+    A complete Markdown newsletter body covering all categories and all
+    8 items, written in a clear developer-friendly voice.
+  agent: writer
+  context:
+    - categorizer_task
+
+editor_task:
+  description: >
+    Take the full newsletter draft and produce the final version:
+    1. Add title: # DevPulse AI | Developer AI Research Newsletter
+    2. Add subtitle with today's date
+    3. Write a 3-sentence intro summarising what is in this issue
+    4. Add a ## Quick Picks section with the 3 most important items as
+       one-liners with emojis for visual scanning
+    5. Include the full newsletter body from the Writer
+    6. Add a closing line: --- | DevPulse AI | Made with CrewAI | TIES 4911
+    Review everything for clarity and consistency before finalising.
+  expected_output: >
+    The complete, polished newsletter as a clean Markdown document,
+    ready to publish. Saved to output/newsletter.md.
+  agent: editor
+  context:
+    - writer_task
+  output_file: output/newsletter.md

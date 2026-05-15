@@ -65,7 +65,7 @@ Use these **exact** sections (use ## level-2 headings):
 Rules:
 - Mention the risk score and risk level prominently.
 - Highlight any missing evidence or uncertainty.
-- Keep the full report under 550 words.
+- Keep each section concise — aim for 60-80 words per section.
 - Do not include legal advice.
 
 **Input data (JSON):**
@@ -91,7 +91,7 @@ async def generate_gemini_written_report(
     payload: Dict[str, Any],
     model: str = "gemini-2.0-flash",
     max_retries: int = 2,
-    max_output_tokens: int = 900,
+    max_output_tokens: int = 2000,
 ) -> Dict[str, Any]:
     """
     Generate a structured written claim report using Google Gemini.

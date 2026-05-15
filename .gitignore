@@ -28,3 +28,28 @@ assignment-4/*-dataset/
 assignment-5/images/
 assignment-7/sample-data/
 demo-3/dataset/
+
+# Claude / local AI (any folder)
+.claude/
+
+# Private keys & certs (do not commit)
+*.pem
+*.p12
+*.pfx
+*.cer
+*.crt
+id_rsa
+id_ed25519
+id_ecdsa
+
+# IDEs
+.vscode
+.idea
+.cursor
+.cursorrules
+.cursorrules.md
+.cursorrules.txt
+.cursorrules.yml
+.cursorrules.yaml
+.cursorrules.json
+.cursorrules.jsonc
